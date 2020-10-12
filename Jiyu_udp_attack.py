@@ -1,5 +1,7 @@
 import sys
 import socket
+from os import popen
+from re import compile
 from time import sleep
 from struct import pack
 
@@ -38,8 +40,11 @@ error_msg = """
 
         -t    loop interval, default = 22 s 循环时间间隔，默认是22秒
         
-        -g    single options, Gets the current Intranet IP. 独立选项，获取当前的ip地址。
-              If choose this options, other are become invalid. 如果选择了这个选项，其他选项将会失效。
+        -g    single options, Gets the current Intranet IP and student 
+              client possible ports. 
+              独立选项，获取当前的ip地址以及学生端监听的端口。
+              If choose this options, other are become invalid. 
+              如果选择了这个选项，其他选项将会失效。
 
         """ % sys.argv[0]
 aasr = """
@@ -156,6 +161,17 @@ def creat_send_object(command):
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
         print("\nYour ip addres is:" + ip)
+
+        tasklist = popen("tasklist|find \"Student\"").read()
+        pattern = compile(r'[e]\s*\d{1,5}\s*[C]')
+        pid = (pattern.search(tasklist).group()[1:-1]).strip()
+
+        netstat = popen("netstat -ano |find \"{}\"".format(pid)).read()
+        pattern = compile(r"%s:\d{1,5}\s*[*]{1}" % ip)
+        netstat_pat =pattern.findall(netstat)
+
+        ports= [((i.strip(ip)[1:-1]).rstrip()) for i in netstat_pat]
+        print("\nYour student client possible ports are:" + ','.join(ports))
         sys.exit(0)
 
     # 获取ip
