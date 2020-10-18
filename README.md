@@ -24,8 +24,11 @@
 
         -t    loop interval, default = 22 s 循环时间间隔，默认是22秒
         
-        -g    single options, Gets the current Intranet IP. 独立选项，获取当前的ip地址。
-              If choose this options, other are become invalid. 如果选择了这个选项，其他选项将会失效。
+        -g    single options, Gets the current Intranet IP and student 
+              client possible ports. 
+              独立选项，获取当前的ip地址以及学生端监听的端口。
+              If choose this options, other are become invalid. 
+              如果选择了这个选项，其他选项将会失效。
           
 ```
 
