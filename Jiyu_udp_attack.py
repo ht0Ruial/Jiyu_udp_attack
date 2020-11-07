@@ -185,11 +185,9 @@ def creat_send_object(command):
     
     # 获取命令内容
     if '-msg' in command:
-        if command[command.index('-msg') + 1].find('-') == -1:
-            send_list.append(pkg_sendlist('-msg', command[command.index('-msg') + 1]))
+        send_list.append(pkg_sendlist('-msg', command[command.index('-msg') + 1]))
     if '-c' in command:
-        if command[command.index('-c') + 1].find('-') == -1:
-            send_list.append(pkg_sendlist('-c', command[command.index('-c') + 1]))
+        send_list.append(pkg_sendlist('-c', command[command.index('-c') + 1]))
     if '-r' in command:
         send_list.append(basicCMD['-r'])
     if '-s' in command:
